@@ -11,15 +11,15 @@
        $ make install
 
   If you want to make write makefiles with "auto-sign" option add this rule:
-
+```
 EBOOT_signed.PBP: EBOOT.BPB
     ebootsign $^ $@
-
+```
   Your makefiles now make two files: EBOOT.PBP and EBOOT_signed.PBP (normal homebrew exe and signed exe). If you don't need unsigned file, change the rule:
-
+```
 EBOOT_signed.PBP: EBOOT.PBP
     ebootsign $^ $@
     mv $@ $^
     $(RM) $^
-
+```
 This rule it's a little crap because it don't generate EBOOT_signed.PBP file, buf make signed EBOOT.PBP file. If you have better idea, please send me!
