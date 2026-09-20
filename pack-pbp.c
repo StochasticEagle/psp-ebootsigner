@@ -99,8 +99,8 @@ int pack_pbp(FILE *outfile, char *files[]) {
 #endif
 
   // Write out the header
-  result = fwrite(&header, sizeof(header), 1, outfile);
-  if (result < 0) {
+  result = (int)fwrite(&header, sizeof(header), 1, outfile);
+  if (result != 1) {
     printf("ERROR: Could not write out the file header. (%s)\n", files[1]);
     return -1;
   }
@@ -140,16 +140,20 @@ int pack_pbp(FILE *outfile, char *files[]) {
       }
          
       // Read in the data from the file
-      if (fread(buffer, readsize, 1, infile) < 0) {
+      if (fread(buffer, (size_t)readsize, 1, infile) != 1) {
 	printf("\nERROR: Could not read in the file data. (%s)\n",
 	       files[2 + loop0]);
+	free(buffer);
+	fclose(infile);
 	return -1;
       }
       
       // Write the contents of the buffer to the PBP
-      if (fwrite(buffer, readsize, 1, outfile) < 0) {
+      if (fwrite(buffer, (size_t)readsize, 1, outfile) != 1) {
 	printf("\nERROR: Could not write out the file data. (%s)\n",
 	       files[1]);
+	free(buffer);
+	fclose(infile);
 	return -1;
       }
       
@@ -158,6 +162,12 @@ int pack_pbp(FILE *outfile, char *files[]) {
          
       // Repeat if we haven't finished writing the file
     } while (filesize[loop0]);
+
+    if (fclose(infile) != 0) {
+      printf("ERROR: Could not close the input file. (%s)\n",
+             files[2 + loop0]);
+      return -1;
+    }
   }
   
   // Close the output file.

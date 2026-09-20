@@ -1,25 +1,64 @@
+# PSP EBOOT Signer
 
--= EBOOT Signer =-
+`ebootsign` is a host-side utility for converting an unsigned PSP
+`EBOOT.PBP` into a signed `EBOOT.PBP`.
 
-     by Int-0
+The code originated as a GNU/Linux port of PSCRYPTER by Carlosgs and was
+adapted to avoid loading an entire EBOOT into one static input buffer.
 
+## Build
 
-  This program is a port of PSCRYPTER by Carlosgs. Code is modified to revert some changes in unpacker/packer routines to make them more flexibles. In PSP version one static buffer was created to store EBOOT.PBP file. In this version, small buffers was created in each I/O operation.
+This is a normal host CMake project. It does not use the PSP cross compiler and
+does not invoke `psp-config`.
 
-  This program is ported to GNU/Linux (and maybe others) to make signed EBOOT.PBP's with homebrew toolchain. You can install this program into your pspsdk simply doing:
-
-       $ make install
-
-  If you want to make write makefiles with "auto-sign" option add this rule:
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
 ```
-EBOOT_signed.PBP: EBOOT.BPB
-    ebootsign $^ $@
+
+The build is compiled warning-clean with current GCC and Clang using
+`-Wall -Wextra -Werror`, with unused API parameters explicitly excluded from
+that policy.
+
+## Test
+
+The test suite generates a minimal deterministic unsigned PBP containing a
+valid PSP PRX ELF header, signs it twice with the built executable, validates
+the resulting PBP and `~PSP` structure, and verifies that both signed outputs
+are byte-identical.
+
+```sh
+ctest --test-dir build --output-on-failure
 ```
-  Your makefiles now make two files: EBOOT.PBP and EBOOT_signed.PBP (normal homebrew exe and signed exe). If you don't need unsigned file, change the rule:
+
+No binary EBOOT fixture is stored in the repository.
+
+## Install
+
+Installation follows standard CMake prefix semantics:
+
+```sh
+cmake --install build --prefix /desired/prefix
 ```
+
+For PSPDEV integration, the caller can choose `$PSPDEV` as the prefix:
+
+```sh
+cmake --install build --prefix "$PSPDEV"
+```
+
+The project performs no privilege detection or elevation. Permission policy
+belongs to the caller or the enclosing PSPDEV installer.
+
+## Usage
+
+```sh
+ebootsign EBOOT.PBP EBOOT_signed.PBP
+```
+
+For a Make-based homebrew project, a signing rule can be written as:
+
+```make
 EBOOT_signed.PBP: EBOOT.PBP
-    ebootsign $^ $@
-    mv $@ $^
-    $(RM) $^
+	ebootsign $< $@
 ```
-This rule it's a little crap because it don't generate EBOOT_signed.PBP file, buf make signed EBOOT.PBP file. If you have better idea, please send me!

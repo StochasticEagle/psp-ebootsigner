@@ -71,13 +71,13 @@ int unpack_pbp(FILE *infile) {
   }
    
   // Read in the header
-  if (fread(&header, sizeof(HEADER), 1, infile) < 0) {
+  if (fread(&header, sizeof(HEADER), 1, infile) != 1) {
     printf("ERROR: Could not read the input file header.\n");
     return -1;
   }
    
   // Check the signature
-  for (loop0 = 0; loop0 < sizeof(correct_sig); loop0++) {
+  for (loop0 = 0; loop0 < 4; loop0++) {
     if (header.signature[loop0] != correct_sig[loop0]) {
       printf("ERROR: Input file is not a PBP file.\n");
       return -1;
@@ -132,14 +132,18 @@ int unpack_pbp(FILE *infile) {
       }
          
       // Read in the data from the PBP
-      if (fread(buffer, readsize, 1, infile) < 0) {
+      if (fread(buffer, (size_t)readsize, 1, infile) != 1) {
 	printf("\nERROR: Could not read in the section data.\n");
+	free(buffer);
+	fclose(outfile);
 	return -1;
       }
          
       // Write the contents of the buffer to the output file
-      if (fwrite(buffer, readsize, 1, outfile) < 0) {
+      if (fwrite(buffer, (size_t)readsize, 1, outfile) != 1) {
 	printf("\nERROR: Could not write out the section data.\n");
+	free(buffer);
+	fclose(outfile);
 	return -1;
       }
          

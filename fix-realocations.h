@@ -53,4 +53,4 @@ typedef struct {
 	Elf32_Word	r_info;
 } Elf32_Rel;
 
-int fix_realocations();
+int fix_realocations(void);

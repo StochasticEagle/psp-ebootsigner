@@ -73,16 +73,37 @@ void dumpFile(char *name, void *in, int size)
 int load_elf(char *elff)
 {
 	FILE *fp = fopen(elff, "rb");
+	long file_size;
+	int size;
+
 	if(fp == NULL) return -1;
-	fseek(fp, 0, SEEK_END);
-	int size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	fread(elf, 1, size, fp);
+	if(fseek(fp, 0, SEEK_END) != 0) {
+		fclose(fp);
+		return -1;
+	}
+
+	file_size = ftell(fp);
+	if(file_size < 0 || file_size > MAX_ORIGIN_FILE_SIZE) {
+		fclose(fp);
+		return -1;
+	}
+
+	if(fseek(fp, 0, SEEK_SET) != 0) {
+		fclose(fp);
+		return -1;
+	}
+
+	size = (int)file_size;
+	if(fread(elf, 1, (size_t)size, fp) != (size_t)size) {
+		fclose(fp);
+		return -1;
+	}
+
 	fclose(fp);
 	return size;
 }
 
-int main_crypter()
+int main_crypter(void)
 {
 	
 	header_keys keys;

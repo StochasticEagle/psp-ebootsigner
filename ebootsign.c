@@ -10,6 +10,7 @@
 #include <malloc/malloc.h>
 #endif
 #include <unistd.h>
+#include <errno.h>
 
 #if defined(_MSC_VER) || defined (__MINGW32__)
 #include <direct.h>
@@ -47,7 +48,10 @@ void clean_tmp(void) {
   remove("data.psp");
   remove("data_unsigned.psp");
   remove("data.psar");
-  chdir("../");
+  if (chdir("../") != 0) {
+    perror("chdir");
+    return;
+  }
   rmdir("tmp_sgn");
 }
 
@@ -79,8 +83,18 @@ int main(int argc, char *argv[]) {
   int err = 0;
 
   // Make temp directory
-  mkdir("./tmp_sgn/", 0777);
-  chdir("./tmp_sgn/");
+  if (mkdir("./tmp_sgn/", 0777) != 0 && errno != EEXIST) {
+    perror("mkdir");
+    fclose(infile);
+    fclose(outfile);
+    return 1;
+  }
+  if (chdir("./tmp_sgn/") != 0) {
+    perror("chdir");
+    fclose(infile);
+    fclose(outfile);
+    return 1;
+  }
   remove("param.sfo");
   remove("icon0.png");
   remove("icon1.pmf");

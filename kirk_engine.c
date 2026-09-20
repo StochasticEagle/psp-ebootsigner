@@ -110,7 +110,7 @@ int kirk_CMD4(void* outbuff, void* inbuff, int size)
 	if(header->data_size == 0) return KIRK_DATA_SIZE_ZERO;
 	
 	u8* key = kirk_4_7_get_key(header->keyseed);
-	if(key == (u8*)KIRK_INVALID_SIZE) return KIRK_INVALID_SIZE;
+	if(key == NULL) return KIRK_INVALID_SIZE;
 	
 	//Set the key
 	AES_ctx aesKey;
@@ -129,7 +129,7 @@ int kirk_CMD7(void* outbuff, void* inbuff, int size)
 	if(header->data_size == 0) return KIRK_DATA_SIZE_ZERO;
 	
 	u8* key = kirk_4_7_get_key(header->keyseed);
-	if(key == (u8*)KIRK_INVALID_SIZE) return KIRK_INVALID_SIZE;
+	if(key == NULL) return KIRK_INVALID_SIZE;
 	
 	//Set the key
 	AES_ctx aesKey;
@@ -194,8 +194,13 @@ int kirk_CMD11(void* outbuff, void* inbuff, int size)
     SHA1Reset(&sha);
     size <<= 4;
     size >>= 4;
-	size = size < header->data_size ? size : header->data_size;
-    SHA1Input(&sha, inbuff+sizeof(KIRK_SHA1_HEADER), size);
+
+    unsigned hash_size = (unsigned)size;
+    if(hash_size > header->data_size) {
+        hash_size = header->data_size;
+    }
+
+    SHA1Input(&sha, inbuff+sizeof(KIRK_SHA1_HEADER), hash_size);
     memcpy(outbuff, sha.Message_Digest, 16);
     return KIRK_OPERATION_SUCCESS;
 }
@@ -212,7 +217,7 @@ int kirk_CMD14(void* outbuff, int size)
     return KIRK_OPERATION_SUCCESS;
 }
 
-int kirk_init()
+int kirk_init(void)
 {
     AES_set_key(&aes_kirk1, kirk1_key, 128);
 	is_kirk_initialized = 1;
@@ -243,7 +248,7 @@ u8* kirk_4_7_get_key(int key_type)
 		case(0x5D): return kirk7_key5D; break;
 		case(0x63): return kirk7_key63; break;
 		case(0x64): return kirk7_key64; break;
-		default: return (u8*)KIRK_INVALID_SIZE; break; //need to get the real error code for that, placeholder now :)
+		default: return NULL; //need to get the real error code for that, placeholder now :)
 	}
 }
 
@@ -265,14 +270,16 @@ int sceUtilsSetFuseID(void*fuse)
 
 int sceUtilsBufferCopyWithRange(void* outbuff, int outsize, void* inbuff, int insize, int cmd)
 {
+    (void)outsize;
     switch(cmd)
     {
-		case KIRK_CMD_DECRYPT_PRIVATE: 
+		case KIRK_CMD_DECRYPT_PRIVATE: {
+             int ret;
              if(insize % 16) return SUBCWR_NOT_16_ALGINED;
-             int ret = kirk_CMD1(outbuff, inbuff, insize, 1); 
+             ret = kirk_CMD1(outbuff, inbuff, insize, 1);
              if(ret == KIRK_HEADER_HASH_INVALID) return SUBCWR_HEADER_HASH_INVALID;
              return ret;
-             break;
+        }
 		case KIRK_CMD_ENCRYPT_IV_0: return kirk_CMD4(outbuff, inbuff, insize); break;
 		case KIRK_CMD_DECRYPT_IV_0: return kirk_CMD7(outbuff, inbuff, insize); break;
 		case KIRK_CMD_PRIV_SIG_CHECK: return kirk_CMD10(inbuff, insize); break;

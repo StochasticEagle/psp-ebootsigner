@@ -1326,12 +1326,12 @@ int AES_set_key(AES_ctx *ctx, const u8 *key, int bits)
 
 void AES_decrypt(AES_ctx *ctx, const u8 *src, u8 *dst)
 {
-	return rijndaelDecrypt(ctx->dk, ctx->Nr, src, dst);
+	rijndaelDecrypt(ctx->dk, ctx->Nr, src, dst);
 }
 
 void AES_encrypt(AES_ctx *ctx, const u8 *src, u8 *dst)
 {
-	return rijndaelEncrypt(ctx->ek, ctx->Nr, src, dst);
+	rijndaelEncrypt(ctx->ek, ctx->Nr, src, dst);
 }
 
 void xor_128(unsigned char *a, unsigned char *b, unsigned char *out)
